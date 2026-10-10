@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -108,8 +109,13 @@ func main() {
 	// r.Static serves static files from the specified directory.
 	r.Static("/public", "./public")
 
-	// r.Run() starts the HTTP server on the defined address (default is ":8080")
-	if err := r.Run(":8080"); err != nil {
+	// r.Run() starts the HTTP server. Hosts like Vercel or Nest pick the
+	// port through the PORT environment variable; locally it is 8080.
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	if err := r.Run(":" + port); err != nil {
 		log.Fatal("server stopped: ", err)
 	}
 }
