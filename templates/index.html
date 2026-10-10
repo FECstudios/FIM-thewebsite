@@ -5,6 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FIM - Nort Labs</title>
+    <link rel="icon" type="image/png" href="/resources/logo-mark.png">
 
   <style>
     html, body { margin:0; height:100%; overflow:hidden; background:#000; font-family:system-ui,sans-serif; }
@@ -16,6 +17,8 @@
     #winhead { display:flex; justify-content:space-between; align-items:center; padding:10px 14px;
                background:#5e17eb; cursor:move; user-select:none; touch-action:none;
                font-weight:700; letter-spacing:.05em; }
+    #brand { display:flex; align-items:center; gap:8px; }
+    #brand img { width:26px; height:26px; display:block; pointer-events:none; }
     #winhead button { background:#000; color:#fff; border:0; border-radius:8px; width:28px; height:28px; cursor:pointer; font-size:16px; }
     #winbody { padding:12px; }
     #prompt { width:100%; height:90px; background:#330c81; color:#fff; border:2px solid #5e17eb;
@@ -38,7 +41,7 @@
 
   <div id="win">
     <div id="winhead">
-      <span>FIM PROMPT</span>
+      <span id="brand"><img src="/resources/logo-mark.png" alt="FIM logo">FIM PROMPT</span>
       <button id="min" title="Minimize">–</button>
     </div>
     <div id="winbody">
