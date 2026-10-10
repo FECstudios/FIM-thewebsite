@@ -39,7 +39,7 @@
   <div id="win">
     <div id="winhead">
       <span>FIM PROMPT</span>
-      <button id="min" title="Küçült">–</button>
+      <button id="min" title="Minimize">–</button>
     </div>
     <div id="winbody">
       <textarea id="prompt" placeholder="Prompt the page"></textarea>
@@ -59,7 +59,7 @@
     const head = document.getElementById("winhead");
     const bodyEl = document.getElementById("winbody");
 
-    // ---- Sürüklenebilir pencere ----
+    // ---- Draggable window ----
     let offX = 0, offY = 0;
     head.addEventListener("pointerdown", (e) => {
       if (e.target.closest("button")) return;
@@ -85,9 +85,9 @@
       e.target.textContent = hidden ? "–" : "+";
     });
 
-    // ---- Sayfa ve geçmiş ----
+    // ---- Page and history ----
     let versions = [];
-    let baseId = 0; // 0 = en son sürüm
+    let baseId = 0; // 0 = latest version
     let shownId = 0;
 
     const RESET = `
@@ -110,9 +110,9 @@ html,body{margin:0;padding:0;background:#000;color:#fff;font-family:'Geom',syste
       baseId = v.id;
       baseEl.replaceChildren();
       const text = document.createElement("span");
-      text.textContent = "Temel: #" + v.id + "  ";
+      text.textContent = "Base: #" + v.id + "  ";
       const reset = document.createElement("button");
-      reset.textContent = "En yeniye dön";
+      reset.textContent = "Back to latest";
       reset.onclick = () => {
         baseId = 0;
         baseEl.replaceChildren();
@@ -127,7 +127,7 @@ html,body{margin:0;padding:0;background:#000;color:#fff;font-family:'Geom',syste
       [...versions].reverse().forEach((v) => {
         const b = document.createElement("button");
         b.className = "ver" + (v.id === shownId ? " active" : "");
-        b.textContent = "#" + v.id + (v.parent_id ? " (#" + v.parent_id + " üzerine)" : "") + " — " + v.prompt;
+        b.textContent = "#" + v.id + (v.parent_id ? " (built on #" + v.parent_id + ")" : "") + " — " + v.prompt;
         b.onclick = () => selectBase(v);
         historyEl.appendChild(b);
       });
@@ -154,7 +154,7 @@ html,body{margin:0;padding:0;background:#000;color:#fff;font-family:'Geom',syste
           body: JSON.stringify({ prompt, parent_id: baseId }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Hata");
+        if (!res.ok) throw new Error(data.error || "Error");
 
         versions.push(data);
         baseId = 0;

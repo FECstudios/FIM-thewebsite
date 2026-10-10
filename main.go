@@ -43,7 +43,7 @@ func main() {
 	r := gin.Default()
 	store, err := NewStore("sections.json")
 	if err != nil {
-		log.Fatal("store açılamadı: ", err)
+		log.Fatal("could not open store: ", err)
 	}
 
 	serveResources(r)
@@ -70,15 +70,15 @@ func main() {
 
 		parentID, previous, err := resolveParent(store, req.ParentID)
 		if err != nil {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "Seçilen sürüm bulunamadı"})
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Selected version not found"})
 			return
 		}
 
 		if ok, reason := requestAllowed(ctx.Request.Context(), req.Prompt); !ok {
 			log.Println("REQUEST REJECTED:", reason)
-			msg := "Bu istek kabul edilmedi. Başka bir şekilde yazmayı dene."
+			msg := "This request was not accepted. Try phrasing it another way."
 			if reason == reasonExternal {
-				msg = "Sayfada dış bağlantı, gömülü video veya script olamaz. Bunu sayfanın içinde yapmayı dene."
+				msg = "The page can't have external links or embedded videos. Try building it into the page itself."
 			}
 			ctx.JSON(http.StatusUnprocessableEntity, gin.H{"error": msg})
 			return
@@ -87,9 +87,9 @@ func main() {
 		html, err := generateChecked(ctx.Request.Context(), req.Prompt, previous)
 		if err != nil {
 			log.Println("GENERATE ERROR:", err)
-			msg := "FIM şu an cevap veremiyor, tekrar dene"
+			msg := "FIM can't respond right now, try again"
 			if errors.Is(err, errQuality) {
-				msg = "FIM sonuçtan memnun kalmadı (kalite kontrolü). Prompt'u biraz değiştirip tekrar dene."
+				msg = "FIM wasn't happy with the result (quality check). Tweak your prompt a little and try again."
 			}
 			ctx.JSON(http.StatusBadGateway, gin.H{"error": msg})
 			return
@@ -98,7 +98,7 @@ func main() {
 		sec, err := store.Add(parentID, req.Prompt, html)
 		if err != nil {
 			log.Println("STORE ERROR:", err)
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Bölüm kaydedilemedi"})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save the section"})
 			return
 		}
 
