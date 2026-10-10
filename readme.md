@@ -5,6 +5,10 @@ You NEED to make this landing page stick out from all of the models that come ou
 
 Your goal is to create new website sections and prompt **GLM 5.3 Flash** *(as long as i have credits)* to generate the website  
 
+LIVE DEMO: https://fim-thewebsite.onrender.com/  
+
+*the website will be a blank screen untill someone types a prompt*
+
 ### Currently written:
 * A website written in html and a server written in go
 * An AI prompt window to add new stuff to the website
