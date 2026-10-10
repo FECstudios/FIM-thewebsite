@@ -101,7 +101,22 @@
 @font-face{font-family:'Geom';src:url('/resources/fonts/geom.ttf')}
 html,body{margin:0;padding:0;background:#000;color:#fff;font-family:'Geom',system-ui,sans-serif}
 *{box-sizing:border-box}
-</style>`;
+</style>
+<script>
+// srcdoc pages resolve links against the parent page's URL, so a plain
+// href="#pricing" would load the whole app inside the iframe. Handle link
+// clicks here: #anchors scroll in place, everything else does nothing.
+document.addEventListener("click", function (e) {
+  var a = e.target.closest && e.target.closest("a[href]");
+  if (!a) return;
+  e.preventDefault();
+  var h = a.getAttribute("href");
+  if (h === "#" || h === "#top") { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+  if (h.charAt(0) !== "#") return;
+  var t = document.getElementById(decodeURIComponent(h.slice(1))) || document.getElementsByName(h.slice(1))[0];
+  if (t) t.scrollIntoView({ behavior: "smooth" });
+});
+<\/script>`;
 
     function show(v) {
       shownId = v.id;
