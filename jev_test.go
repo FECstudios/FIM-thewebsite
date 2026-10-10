@@ -220,3 +220,12 @@ func TestScanPageAllowsPlainScript(t *testing.T) {
 		t.Fatal("expected fetch to be rejected")
 	}
 }
+
+func TestCheckPageIgnoresLowFollowedRequest(t *testing.T) {
+	a := goodPage()
+	a["followed_request"] = jevAnswer{Type: "noul", Noul: 0.26}
+	fakeJev(t, http.StatusOK, a)
+	if reason, _ := checkPage(context.Background(), "p", "<main></main>"); reason != "" {
+		t.Fatalf("expected pass, got %q", reason)
+	}
+}

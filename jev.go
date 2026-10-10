@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	xhtml "golang.org/x/net/html"
 )
@@ -330,19 +331,21 @@ func checkPage(ctx context.Context, prompt, page string) (string, error) {
 		return "the page looks unsafe", nil
 	case q.Score < 1.5 && q.Confidence >= 0.5:
 		return "the page does not meet the quality bar", nil
-	case followed.Noul < 0.4:
-		return "the page does not do what the request asked", nil
 	}
+	// followed_request is only logged: Jev sees the new page but not the old
+	// one, so it cannot tell what changed and often scores good edits low.
 	return "", nil
 }
 
 func generateChecked(ctx context.Context, prompt, previous string) (string, error) {
 	extra := ""
 	for attempt := 1; attempt <= 2; attempt++ {
+		start := time.Now()
 		page, err := generateSection(ctx, prompt+extra, previous)
 		if err != nil {
 			return "", err
 		}
+		log.Printf("GENERATE: attempt %d took %s (%d chars)", attempt, time.Since(start).Round(time.Second), len(page))
 
 		reason, scripts := scanPage(page)
 		if reason == "" && len(scripts) > 0 {
