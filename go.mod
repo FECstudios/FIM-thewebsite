@@ -1,8 +1,11 @@
 module my-first-go
 
-go 1.27.2
+go 1.27
 
-require github.com/gin-gonic/gin v1.12.0
+require (
+	github.com/gin-gonic/gin v1.12.0
+	golang.org/x/net v0.61.0
+)
 
 require (
 	github.com/bytedance/gopkg v0.1.4 // indirect
@@ -30,7 +33,6 @@ require (
 	go.mongodb.org/mongo-driver/v2 v2.9.2 // indirect
 	golang.org/x/arch v0.32.0 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
-	golang.org/x/net v0.61.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
