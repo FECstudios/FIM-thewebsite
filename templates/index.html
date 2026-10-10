@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FIM - Nort Labs</title>
+
+  <style>
+    html, body { margin:0; height:100%; overflow:hidden; background:#000; font-family:system-ui,sans-serif; }
+    #page { position:fixed; inset:0; width:100%; height:100%; border:0; background:#000; }
+
+    #win { position:fixed; top:24px; right:24px; width:340px; max-width:calc(100vw - 16px); z-index:10;
+           background:#000; color:#fff; border:3px solid #fff; border-radius:16px;
+           box-shadow:8px 8px 0 #233dff; overflow:hidden; }
+    #winhead { display:flex; justify-content:space-between; align-items:center; padding:10px 14px;
+               background:#5e17eb; cursor:move; user-select:none; touch-action:none;
+               font-weight:700; letter-spacing:.05em; }
+    #winhead button { background:#000; color:#fff; border:0; border-radius:8px; width:28px; height:28px; cursor:pointer; font-size:16px; }
+    #winbody { padding:12px; }
+    #prompt { width:100%; height:90px; background:#330c81; color:#fff; border:2px solid #5e17eb;
+              border-radius:10px; padding:10px; box-sizing:border-box; resize:vertical; font:inherit; }
+    #btn { margin-top:8px; width:100%; padding:10px; background:#233dff; color:#fff; border:0;
+           border-radius:10px; cursor:pointer; font-weight:700; }
+    #btn:disabled { opacity:.5; cursor:wait; }
+    #base { color:#bbb; font-size:13px; margin-top:8px; }
+    #base button { background:#330c81; color:#fff; border:0; border-radius:6px; padding:2px 8px; cursor:pointer; }
+    #history { max-height:180px; overflow:auto; margin-top:10px; }
+    .ver { display:block; width:100%; text-align:left; background:#111; color:#ddd; border:1px solid #330c81;
+           border-radius:8px; padding:6px 8px; margin:4px 0; cursor:pointer; font-size:12px; }
+    .ver.active { border-color:#233dff; color:#fff; }
+  </style>
+
+
+  </head>
+  <body>
+    <iframe id="page" sandbox="allow-scripts"></iframe>
+
+  <div id="win">
+    <div id="winhead">
+      <span>FIM PROMPT</span>
+      <button id="min" title="Küçült">–</button>
+    </div>
+    <div id="winbody">
+      <textarea id="prompt" placeholder="Prompt the page"></textarea>
+      <button id="btn">Let the vibes begin</button>
+      <div id="base"></div>
+      <div id="history"></div>
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById("btn");
+    const promptEl = document.getElementById("prompt");
+    const pageEl = document.getElementById("page");
+    const historyEl = document.getElementById("history");
+    const baseEl = document.getElementById("base");
+    const win = document.getElementById("win");
+    const head = document.getElementById("winhead");
+    const bodyEl = document.getElementById("winbody");
+
+    // ---- Sürüklenebilir pencere ----
+    let offX = 0, offY = 0;
+    head.addEventListener("pointerdown", (e) => {
+      if (e.target.closest("button")) return;
+      const r = win.getBoundingClientRect();
+      win.style.left = r.left + "px";
+      win.style.top = r.top + "px";
+      win.style.right = "auto";
+      offX = e.clientX - r.left;
+      offY = e.clientY - r.top;
+      head.setPointerCapture(e.pointerId);
+    });
+    head.addEventListener("pointermove", (e) => {
+      if (!head.hasPointerCapture(e.pointerId)) return;
+      const maxX = Math.max(0, window.innerWidth - win.offsetWidth);
+      const maxY = Math.max(0, window.innerHeight - head.offsetHeight);
+      win.style.left = Math.min(Math.max(0, e.clientX - offX), maxX) + "px";
+      win.style.top = Math.min(Math.max(0, e.clientY - offY), maxY) + "px";
+    });
+
+    document.getElementById("min").addEventListener("click", (e) => {
+      const hidden = bodyEl.style.display === "none";
+      bodyEl.style.display = hidden ? "block" : "none";
+      e.target.textContent = hidden ? "–" : "+";
+    });
+
+    // ---- Sayfa ve geçmiş ----
+    let versions = [];
+    let baseId = 0; // 0 = en son sürüm
+    let shownId = 0;
+
+    const RESET = `
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; connect-src 'none'; img-src 'self' data:; font-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+@font-face{font-family:'High Tide Geometric';src:url('/resources/fonts/HighTide.otf')}
+@font-face{font-family:'Lazy Dog';src:url('/resources/fonts/lazy_dog.ttf')}
+@font-face{font-family:'Geom';src:url('/resources/fonts/geom.ttf')}
+html,body{margin:0;padding:0;background:#000;color:#fff;font-family:'Geom',system-ui,sans-serif}
+*{box-sizing:border-box}
+</style>`;
+
+    function show(v) {
+      shownId = v.id;
+      pageEl.srcdoc = RESET + v.html;
+      renderHistory();
+    }
+
+    function selectBase(v) {
+      baseId = v.id;
+      baseEl.replaceChildren();
+      const text = document.createElement("span");
+      text.textContent = "Temel: #" + v.id + "  ";
+      const reset = document.createElement("button");
+      reset.textContent = "En yeniye dön";
+      reset.onclick = () => {
+        baseId = 0;
+        baseEl.replaceChildren();
+        if (versions.length) show(versions[versions.length - 1]);
+      };
+      baseEl.append(text, reset);
+      show(v);
+    }
+
+    function renderHistory() {
+      historyEl.replaceChildren();
+      [...versions].reverse().forEach((v) => {
+        const b = document.createElement("button");
+        b.className = "ver" + (v.id === shownId ? " active" : "");
+        b.textContent = "#" + v.id + (v.parent_id ? " (#" + v.parent_id + " üzerine)" : "") + " — " + v.prompt;
+        b.onclick = () => selectBase(v);
+        historyEl.appendChild(b);
+      });
+    }
+
+    fetch("/sections")
+      .then((r) => r.json())
+      .then((d) => {
+        versions = d.sections || [];
+        if (versions.length) show(versions[versions.length - 1]);
+      });
+
+    btn.addEventListener("click", async () => {
+      const prompt = promptEl.value.trim();
+      if (!prompt) return;
+
+      btn.disabled = true;
+      btn.textContent = "Convincing the big ai...";
+
+      try {
+        const res = await fetch("/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, parent_id: baseId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Hata");
+
+        versions.push(data);
+        baseId = 0;
+        baseEl.replaceChildren();
+        promptEl.value = "";
+        show(data);
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Generate";
+      }
+    });
+
+    promptEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) btn.click();
+    });
+  </script>
+
+  </body>
+</html>
