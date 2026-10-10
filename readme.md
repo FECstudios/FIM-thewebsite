@@ -21,6 +21,10 @@ LIVE DEMO: https://fim-thewebsite.onrender.com/
 * [ ] Add a way to make ai image generations
 * [ ] AI model selector
 
+# Logic
+
+<img width="2481" height="1976" alt="Adsız-2026-10-10-1617" src="https://github.com/user-attachments/assets/8788b469-dd27-4a3f-b205-f75fc4d2cc53" />
+
 # Screenshots
 
 <img width="2388" height="1396" alt="image" src="https://github.com/user-attachments/assets/b2e525d9-283a-484b-8e50-ab1b03c3b095" />
