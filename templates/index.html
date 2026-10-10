@@ -126,7 +126,7 @@ html,body{margin:0;padding:0;background:#000;color:#fff;font-family:'Geom',syste
     }
 
     function renderHistory() {
-      historyEl.replaceChildren();
+      historyEl.replaceChildren(); 
       [...versions].reverse().forEach((v) => {
         const b = document.createElement("button");
         b.className = "ver" + (v.id === shownId ? " active" : "");

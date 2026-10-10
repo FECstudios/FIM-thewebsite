@@ -56,6 +56,8 @@ Output rules:
 
 
 DO. NOT. CODE. EVERYTHING. AT. ONCE. LET. USER. PROMPT. YOU. STEP. BY. STEP.
+DO NOT REASON. UNLESS TASK IS REALLY HARD.
+ANSWER FAST. USER DOES NOT GET HAPPY THE LONGER THE PROJECT TAKES.
 `
 
 type chatMessage struct {
@@ -77,6 +79,23 @@ type ChatResponse struct {
 	Error *struct {
 		Message string `json:"message"`
 	} `json:"error"`
+	Usage struct {
+		PromptTokens            int `json:"prompt_tokens"`
+		CompletionTokens        int `json:"completion_tokens"`
+		CompletionTokensDetails struct {
+			ReasoningTokens int `json:"reasoning_tokens"`
+		} `json:"completion_tokens_details"`
+	} `json:"usage"`
+}
+
+// defaultModel builds the page unless AI_MODEL is set.
+const defaultModel = "z-ai/glm-5.3-flash"
+
+func pageModel() string {
+	if m := os.Getenv("AI_MODEL"); m != "" {
+		return m
+	}
+	return defaultModel
 }
 
 func cleanHTML(s string) string {
@@ -216,8 +235,9 @@ func askModel(ctx context.Context, userContent string) (string, error) {
 		return "", errors.New("NO KEY CONFIGURED")
 	}
 
+	model := pageModel()
 	body, err := json.Marshal(chatRequest{
-		Model: "z-ai/glm-5.3-flash",
+		Model: model,
 		Messages: []chatMessage{
 			{Role: "system", Content: systemPrompt + brandContext()},
 			{Role: "user", Content: userContent},
@@ -235,8 +255,10 @@ func askModel(ctx context.Context, userContent string) (string, error) {
 	req.Header.Set("Authorization", "Bearer "+key)
 	req.Header.Set("Content-Type", "application/json")
 
+	start := time.Now()
 	resp, err := httpClient.Do(req)
 	if err != nil {
+		log.Printf("AI CALL: %s failed after %s: %v", model, time.Since(start).Round(time.Second), err)
 		return "", err
 	}
 
@@ -244,6 +266,7 @@ func askModel(ctx context.Context, userContent string) (string, error) {
 
 	var out ChatResponse
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		log.Printf("AI CALL: %s failed after %s: %v", model, time.Since(start).Round(time.Second), err)
 		return "", err
 	}
 	if resp.StatusCode != http.StatusOK {
@@ -254,5 +277,9 @@ func askModel(ctx context.Context, userContent string) (string, error) {
 	if len(out.Choices) == 0 {
 		return "", fmt.Errorf("AI RETURNED EMPTY")
 	}
-	return out.Choices[0].Message.Content, nil
+	c, u := out.Choices[0], out.Usage
+	log.Printf("AI CALL: %s took %s, finish=%s, tokens in=%d out=%d (reasoning=%d), reply=%d chars",
+		model, time.Since(start).Round(time.Second), c.FinishReason,
+		u.PromptTokens, u.CompletionTokens, u.CompletionTokensDetails.ReasoningTokens, len(c.Message.Content))
+	return c.Message.Content, nil
 }

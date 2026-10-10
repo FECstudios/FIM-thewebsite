@@ -30,6 +30,9 @@ var errQuality = errors.New("quality check failed")
 // something the sandboxed page can never contain.
 const reasonExternal = "asks for external links or scripts"
 
+// reasonLowQuality is the only page rejection that is not about safety.
+const reasonLowQuality = "the page does not meet the quality bar"
+
 var errNoKey = errors.New("HACKCLUB_AI_KEY is not set")
 
 var jevURL = "https://ai.hackclub.com/proxy/v1/jev/systemone"
@@ -330,7 +333,7 @@ func checkPage(ctx context.Context, prompt, page string) (string, error) {
 	case unsafe.Noul > 0.5:
 		return "the page looks unsafe", nil
 	case q.Score < 1.5 && q.Confidence >= 0.5:
-		return "the page does not meet the quality bar", nil
+		return reasonLowQuality, nil
 	}
 	// followed_request is only logged: Jev sees the new page but not the old
 	// one, so it cannot tell what changed and often scores good edits low.
@@ -363,6 +366,12 @@ func generateChecked(ctx context.Context, prompt, previous string) (string, erro
 			}
 		}
 		if reason == "" {
+			return page, nil
+		}
+		// A safe page that only misses the quality bar is better than an
+		// error that throws the visitor's prompt away.
+		if reason == reasonLowQuality && attempt == 2 {
+			log.Println("QUALITY: attempt 2 is below the quality bar, accepting it anyway")
 			return page, nil
 		}
 		log.Printf("QUALITY: attempt %d rejected: %s", attempt, reason)

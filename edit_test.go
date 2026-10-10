@@ -131,3 +131,29 @@ func TestGenerateSectionEmptyPageWantsFullPage(t *testing.T) {
 		t.Fatalf("got %q %v", page, err)
 	}
 }
+
+func TestGenerateCheckedAcceptsLowQualityOnLastAttempt(t *testing.T) {
+	calls := fakeModel(t, "<main><h1>One</h1></main>", "<main><h1>Two</h1></main>")
+	a := goodPage()
+	a["quality"] = jevAnswer{Type: "score", Score: 1.0, Confidence: 0.96}
+	fakeJev(t, http.StatusOK, a)
+
+	page, err := generateChecked(context.Background(), "start", "")
+	if err != nil {
+		t.Fatalf("expected the second page to be accepted, got %v", err)
+	}
+	if page != "<main><h1>Two</h1></main>" || len(*calls) != 2 {
+		t.Fatalf("expected second attempt after one retry, got %q after %d calls", page, len(*calls))
+	}
+}
+
+func TestGenerateCheckedStillRejectsUnsafe(t *testing.T) {
+	fakeModel(t, "<main><h1>One</h1></main>", "<main><h1>Two</h1></main>")
+	a := goodPage()
+	a["malicious"] = jevAnswer{Type: "noul", Noul: 0.9}
+	fakeJev(t, http.StatusOK, a)
+
+	if _, err := generateChecked(context.Background(), "start", ""); err != errQuality {
+		t.Fatalf("expected errQuality, got %v", err)
+	}
+}
